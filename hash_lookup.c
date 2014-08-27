@@ -40,5 +40,15 @@ int main(void) {
     assert(hashlookup_search(lookup, 'Z') == -1);
     hashlookup_free(&lookup);
 
+    keys[1][0] = 'b';
+    lookup = hashlookup_build(keys, values, 10);
+    assert(hashlookup_search(lookup, 'a') == 0);
+    assert(hashlookup_search(lookup, 'Z') == -1);
+    hashlookup_edit(&lookup, 'a', 5);
+    hashlookup_edit(&lookup, 'Z', 5);
+    assert(hashlookup_search(lookup, 'a') == 5);
+    assert(hashlookup_search(lookup, 'Z') == -1);
+    hashlookup_free(&lookup);
+
     return 0;
 }

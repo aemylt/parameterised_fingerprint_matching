@@ -86,6 +86,25 @@ int hashlookup_search(hash_lookup lookup, char key) {
 }
 
 /*
+    hashlookup_edit
+    Sets values[lookup.hash(key)] to value if key is in the dictionary.
+    Parameters:
+        hash_lookup lookup - The dictionary to edit
+        char        key    - The key to change
+        char        value  - The value to change it to
+    Returns void:
+        Parameter lookup modified by reference
+        values[lookup.hash(key)] = value if key \in keys
+*/
+void hashlookup_edit(hash_lookup *lookup, char key, int value) {
+    if ((lookup->num == 1) && (key == lookup->keys[0])) lookup->values[0] = value;
+    else if (lookup->num > 1) {
+        int id = cmph_search(lookup->hash, &key, 1);
+        if ((id < lookup->num) && (key == lookup->keys[id])) lookup->values[id] = value;
+    }
+}
+
+/*
     hashlookup_free
     Frees the dictionary.
     Parameters:
