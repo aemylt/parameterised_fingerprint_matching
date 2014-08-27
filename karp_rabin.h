@@ -239,6 +239,12 @@ void fingerprint_concat(fingerprinter printer, fingerprint u, fingerprint v, fin
     if (compare(uv->finger, printer->p) > 0) mpz_sub(uv->finger, uv->finger, printer->p);
 }
 
+void fingerprint_zero(fingerprinter printer, fingerprint f, unsigned int z, mpz_t r_z, fingerprint f_z) {
+    fingerprint_assign(f, f_z);
+    mpz_submul_ui(f_z->finger, r_z, z);
+    if (mpz_cmp_si(f_z->finger, 0) < 0) mpz_add(f_z->finger, f_z->finger, printer->p);
+}
+
 /*
     fingerprint_equals
     Checks if two fingerprints are equal.

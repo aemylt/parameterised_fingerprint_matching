@@ -52,6 +52,15 @@ int main(void) {
     fingerprint_concat(printer, empty, print, v);
     assert(fingerprint_equals(v, print));
 
+    fingerprint zeroed = init_fingerprint(), z = init_fingerprint();
+    P[12] = 0;
+    set_fingerprint(printer, P, 20, zeroed);
+    mpz_t r_z;
+    mpz_init(r_z);
+    mpz_powm_ui(r_z, printer->r, 12, printer->p);
+    fingerprint_zero(printer, print, 2, r_z, z);
+    assert(fingerprint_equals(z, zeroed));
+
     fingerprint_free(print);
     fingerprint_free(prefix);
     fingerprint_free(suffix);
