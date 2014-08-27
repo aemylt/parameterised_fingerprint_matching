@@ -135,7 +135,7 @@ fingerprint init_fingerprint() {
     Sets a fingerprint to a given string.
     Parameters:
         fingerprinter printer - The printer to use
-        unsigned int          *T      - The text string
+        unsigned int  *T      - The text string
         unsigned      int l   - The length of the string
         fingerprint   print   - The fingerprint to change
     Returns void:
@@ -239,9 +239,21 @@ void fingerprint_concat(fingerprinter printer, fingerprint u, fingerprint v, fin
     if (compare(uv->finger, printer->p) > 0) mpz_sub(uv->finger, uv->finger, printer->p);
 }
 
-void fingerprint_zero(fingerprinter printer, fingerprint f, unsigned int z, mpz_t r_z, fingerprint f_z) {
+/*
+    fingerprint_zero
+    Sets the element at index z of a fingerprint to zero.
+    Parameters:
+        fingerprinter printer - The printer to use
+        fingerprint   f       - The original fingerprint
+        unsigned int  t_z     - The value of T[z] in the text
+        mpz_t         r_z     - r^z
+        fingerprint   f_z     - The newly-zeroed fingerprint
+    Returns void:
+        Parameter f_z modified by reference to the fingerprint with the element at index z set to zero.
+*/
+void fingerprint_zero(fingerprinter printer, fingerprint f, unsigned int t_z, mpz_t r_z, fingerprint f_z) {
     fingerprint_assign(f, f_z);
-    mpz_submul_ui(f_z->finger, r_z, z);
+    mpz_submul_ui(f_z->finger, r_z, t_z);
     if (mpz_cmp_si(f_z->finger, 0) < 0) mpz_add(f_z->finger, f_z->finger, printer->p);
 }
 
