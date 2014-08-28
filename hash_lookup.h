@@ -35,11 +35,18 @@ typedef struct {
     Returns hash_lookup:
         The constructed dictionary
 */
-hash_lookup hashlookup_build(char **keys, int *values, int num) {
+hash_lookup hashlookup_build(char *key_string, int *values, int num) {
     hash_lookup lookup;
     lookup.num = num;
 
     if (num > 1) {
+        int i;
+        char **keys = malloc(num * sizeof(char*));
+        for (i = 0; i < num; i++) {
+            keys[i] = malloc(sizeof(char) << 1);
+            keys[i][0] = key_string[i];
+            keys[i][1] = '\0';
+        }
         cmph_io_adapter_t *source = cmph_io_vector_adapter(keys, num);
         cmph_config_t *config = cmph_config_new(source);
         cmph_config_set_algo(config, CMPH_CHD);
@@ -49,18 +56,17 @@ hash_lookup hashlookup_build(char **keys, int *values, int num) {
         lookup.keys = malloc(num * sizeof(char));
         lookup.values = malloc(num * sizeof(int));
 
-        int i;
         unsigned int id;
-        char *key;
+        char key;
         for (i = 0; i < num; i++) {
-            key = keys[i];
-            id = cmph_search(lookup.hash, key, 1);
-            lookup.keys[id] = keys[i][0];
+            key = key_string[i];
+            id = cmph_search(lookup.hash, &key, 1);
+            lookup.keys[id] = key;
             lookup.values[id] = values[i];
         }
     } else if (num == 1) {
         lookup.keys = malloc(sizeof(char));
-        lookup.keys[0] = keys[0][0];
+        lookup.keys[0] = key_string[0];
         lookup.values = malloc(sizeof(int));
         lookup.values[0] = values[0];
     }
