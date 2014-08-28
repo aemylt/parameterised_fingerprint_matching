@@ -4,7 +4,7 @@
 #include <assert.h>
 
 int main(void) {
-    unsigned int *P = malloc(20 * sizeof(int));
+    int *P = malloc(20 * sizeof(int));
     fingerprinter printer = fingerprinter_build(100, 0);
     gmp_printf("p = %Zd\n", printer->p);
     gmp_printf("r = %Zd\n", printer->r);

@@ -141,7 +141,7 @@ fingerprint init_fingerprint() {
     Returns void:
         Parameter print modified by reference to new fingerprint.
 */
-void set_fingerprint(fingerprinter printer, unsigned int *T, unsigned int l, fingerprint print) {
+void set_fingerprint(fingerprinter printer, int *T, unsigned int l, fingerprint print) {
     mpz_set_ui(print->r_k, 1);
     int i;
 
@@ -251,7 +251,7 @@ void fingerprint_concat(fingerprinter printer, fingerprint u, fingerprint v, fin
     Returns void:
         Parameter f_z modified by reference to the fingerprint with the element at index z set to zero.
 */
-void fingerprint_zero(fingerprinter printer, fingerprint f, unsigned int t_z, mpz_t r_z, fingerprint f_z) {
+void fingerprint_zero(fingerprinter printer, fingerprint f, int t_z, mpz_t r_z, fingerprint f_z) {
     fingerprint_assign(f, f_z);
     mpz_submul_ui(f_z->finger, r_z, t_z);
     if (mpz_cmp_si(f_z->finger, 0) < 0) mpz_add(f_z->finger, f_z->finger, printer->p);
