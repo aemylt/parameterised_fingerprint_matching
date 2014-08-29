@@ -20,3 +20,9 @@ hash-lookup:
 
 hash-lookup-clean:
 	rm hash_lookup
+
+mmatch:
+	$(CC) m_match.c -o m_match $(CMPHLIB)
+
+mmatch-clean:
+	rm m_match
