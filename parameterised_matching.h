@@ -54,7 +54,7 @@ void add_occurance(fingerprinter printer, fingerprint T_f, int location, pattern
 }
 
 int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma, int alpha, int *results) {
-    int i, j, k, *predecessor = malloc(m * sizeof(int)), lookup, lm = 0, matches = 0, index, pattern_start;
+    int i, j, k, *predecessor = malloc(m * sizeof(int)), lookup, lm = 0, matches = 0, index;
     for (i = 0; i < s_sigma; i++) predecessor[i] = -1;
 
     hash_lookup p_pred = hashlookup_build(sigma, predecessor, s_sigma), t_pred = hashlookup_build(sigma, predecessor, s_sigma);
@@ -130,10 +130,11 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
                 index = P_i[j].zero_start;
                 fingerprint_assign(T_cur, tmp);
                 while (index != P_i[j].zero_end) {
-                    pattern_start = i - ((j == lm - 1) ? m : (P_i[j].row_size << 1));
-                    if (P_i[j].to_zero[index].z < i - P_i[j].row_size) {
+                    if (P_i[j].to_zero[index].z <= i - P_i[j].row_size) {
                         if (++P_i[j].zero_start == s_sigma) P_i[j].zero_start = 0;
-                    } else if (P_i[j].to_zero[index].z - P_i[j].to_zero[index].pred < pattern_start) fingerprint_zero(printer, T_cur, P_i[j].to_zero[index].pred, P_i[j].to_zero[index].r_z, tmp);
+                    } else if (P_i[j].to_zero[index].z - P_i[j].to_zero[index].pred <= i - ((j == lm - 1) ? m : (P_i[j].row_size << 1))) {
+                        fingerprint_zero(printer, T_cur, P_i[j].to_zero[index].pred, P_i[j].to_zero[index].r_z, tmp);
+                    }
                     if (++index == s_sigma) index = 0;
                     fingerprint_assign(tmp, T_cur);
                 }
