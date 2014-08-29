@@ -68,7 +68,7 @@ typedef struct {
     Returns mmatch_state:
         Initial state for algorithm
 */
-mmatch_state mmatch_build(int* A, int m, char *sigma, int s_sigma) {
+mmatch_state mmatch_build(int* A, int m) {
     int i, j;
     mmatch_state state;
     state.A = malloc(m * sizeof(int));
