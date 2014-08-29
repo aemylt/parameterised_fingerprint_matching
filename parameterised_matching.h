@@ -3,6 +3,7 @@
 
 #include "hash_lookup.h"
 #include "karp_rabin.h"
+#include "m_match.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <gmp.h>
@@ -72,9 +73,10 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
     fingerprinter printer = fingerprinter_build(n, alpha);
 
     while ((1 << lm) < m) lm++;
-    lm -= 1;
 
-    j = 1;
+    mmatch_state mmatch = mmatch_build(predecessor, 3 * s_sigma * lm);
+
+    j = mmatch.m;
     i = 0;
     pattern_row *P_i = malloc(lm * sizeof(pattern_row));
     while ((j << 2) < m) {
@@ -105,6 +107,9 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
     for (k = 0; k < s_sigma; k++) mpz_init(P_i[i].to_zero[k].r_z);
     P_i[i].zero_start = 0;
     P_i[i].zero_end = 0;
+
+    lm = i + 1;
+    P_i = realloc(P_i, lm * sizeof(pattern_row));
 
     fingerprint T_f = init_fingerprint(), T_cur = init_fingerprint(), T_prev = init_fingerprint(), tmp = init_fingerprint();
     mpz_t r_z;
@@ -149,7 +154,7 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
                 shift_row(printer, &P_i[j], tmp);
             }
         }
-        add_occurance(printer, T_prev, i, &P_i[0], tmp);
+        if (mmatch_stream(&mmatch, lookup, i) == i) add_occurance(printer, T_prev, i, &P_i[0], tmp);
     }
 
     hashlookup_free(&t_pred);
