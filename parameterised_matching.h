@@ -1,3 +1,6 @@
+#ifndef PARAMETERISED_MATCHING
+#define PARAMETERISED_MATCHING
+
 #include "hash_lookup.h"
 #include "karp_rabin.h"
 #include <stdlib.h>
@@ -162,3 +165,5 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
     mpz_clear(r_z);
     return matches;
 }
+
+#endif
