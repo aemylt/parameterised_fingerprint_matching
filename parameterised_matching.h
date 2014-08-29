@@ -15,24 +15,42 @@ typedef struct {
 } zero_item;
 
 typedef struct {
-    int row_size, count, zero_start, zero_end;
-    fingerprint P;
-    viable_occurance *VOs;
+    int row_size, period, count, zero_start, zero_end;
+    fingerprint P, period_f;
+    viable_occurance VOs[2];
     zero_item *to_zero;
 } pattern_row;
 
-void shift_row(pattern_row *P_i) {
-    int i;
-    for (i = 1; i < P_i->count; i++) {
-        P_i->VOs[i - 1].location = P_i->VOs[i].location;
-        fingerprint_assign(P_i->VOs[i].T_f, P_i->VOs[i - 1].T_f);
+void shift_row(fingerprinter printer, pattern_row *P_i, fingerprint tmp) {
+    if (P_i->count <= 2) {
+        fingerprint_assign(P_i->VOs[1].T_f, P_i->VOs[0].T_f);
+        P_i->VOs[0].location = P_i->VOs[1].location;
+    } else {
+        fingerprint_concat(printer, P_i->VOs[0].T_f, P_i->period_f, tmp);
+        fingerprint_assign(tmp, P_i->VOs[0].T_f);
+        P_i->VOs[0].location += P_i->period;
     }
     P_i->count--;
 }
 
-void add_occurance(fingerprint T_f, int location, pattern_row *P_i) {
-    P_i->VOs[P_i->count].location = location;
-    fingerprint_assign(T_f, P_i->VOs[P_i->count++].T_f);
+void add_occurance(fingerprinter printer, fingerprint T_f, int location, pattern_row *P_i, fingerprint tmp) {
+    if (P_i->count < 2) {
+        fingerprint_assign(T_f, P_i->VOs[P_i->count].T_f);
+        P_i->VOs[P_i->count].location = location;
+        P_i->count++;
+    } else {
+        if (P_i->count == 2) {
+            P_i->period = P_i->VOs[1].location - P_i->VOs[0].location;
+            fingerprint_suffix(printer, P_i->VOs[1].T_f, P_i->VOs[0].T_f, P_i->period_f);
+        }
+        fingerprint_suffix(printer, T_f, P_i->VOs[1].T_f, tmp);
+        int period = location - P_i->VOs[1].location;
+        if ((period == P_i->period) && (fingerprint_equals(tmp, P_i->period_f))) {
+            fingerprint_assign(T_f, P_i->VOs[1].T_f);
+            P_i->VOs[1].location = location;
+            P_i->count++;
+        } else printf("Warning: Error in Period occured at location %d. VO discarded.\n", location);
+    }
 }
 
 int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma, int alpha, int *results) {
@@ -60,9 +78,10 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
         P_i[i].row_size = j;
         P_i[i].count = 0;
         P_i[i].P = init_fingerprint();
+        P_i[i].period_f = init_fingerprint();
         set_fingerprint(printer, &predecessor[j], j, P_i[i].P);
-        P_i[i].VOs = malloc(j * sizeof(viable_occurance));
-        for (k = 0; k < j; k++) P_i[i].VOs[k].T_f = init_fingerprint();
+        P_i[i].VOs[0].T_f = init_fingerprint();
+        P_i[i].VOs[1].T_f = init_fingerprint();
         P_i[i].to_zero = malloc(s_sigma * sizeof(zero_item));
         P_i[i].zero_start = 0;
         P_i[i].zero_end = 0;
@@ -73,11 +92,12 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
     P_i[i].row_size = m - j;
     P_i[i].count = 0;
     P_i[i].P = init_fingerprint();
+    P_i[i].period_f = init_fingerprint();
     set_fingerprint(printer, &predecessor[j], m - j, P_i[i].P);
     free(predecessor);
 
-    P_i[i].VOs = malloc((m - j) * sizeof(viable_occurance));
-    for (k = 0; k < (m - j); k++) P_i[i].VOs[k].T_f = init_fingerprint();
+    P_i[i].VOs[0].T_f = init_fingerprint();
+    P_i[i].VOs[1].T_f = init_fingerprint();
     P_i[i].to_zero = malloc(s_sigma * sizeof(zero_item));
     for (k = 0; k < s_sigma; k++) mpz_init(P_i[i].to_zero[k].r_z);
     P_i[i].zero_start = 0;
@@ -120,19 +140,20 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
                 fingerprint_suffix(printer, T_cur, P_i[j].VOs[0].T_f, T_f);
                 if (fingerprint_equals(P_i[j].P, T_f)) {
                     if (j == lm - 1) results[matches++] = i;
-                    else add_occurance(T_prev, P_i[j].VOs[0].location + P_i[j].row_size, &P_i[j + 1]);
+                    else add_occurance(printer, T_prev, P_i[j].VOs[0].location + P_i[j].row_size, &P_i[j + 1], tmp);
                 }
-                shift_row(&P_i[j]);
+                shift_row(printer, &P_i[j], tmp);
             }
         }
-        add_occurance(T_prev, i, &P_i[0]);
+        add_occurance(printer, T_prev, i, &P_i[0], tmp);
     }
 
     hashlookup_free(&t_pred);
     for (i = 0; i < lm; i++) {
         fingerprint_free(P_i[i].P);
-        for (k = 0; k < P_i[i].row_size; k++) fingerprint_free(P_i[i].VOs[k].T_f);
-        free(P_i[i].VOs);
+        fingerprint_free(P_i[i].period_f);
+        fingerprint_free(P_i[i].VOs[0].T_f);
+        fingerprint_free(P_i[i].VOs[1].T_f);
         for (k = 0; k < s_sigma; k++) mpz_clear(P_i[i].to_zero[k].r_z);
         free(P_i[i].to_zero);
     }
