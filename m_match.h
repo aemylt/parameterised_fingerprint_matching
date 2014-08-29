@@ -76,7 +76,7 @@ mmatch_state mmatch_build(int* A, int m) {
     state.failure = malloc(m * sizeof(int));
     i = -1;
     state.failure[0] = -1;
-    for (j = 1; j < m - 1; j++) {
+    for (j = 1; j < m; j++) {
         while (i > -1 && !compare_pi_pj(i + 1, j, A)) i = state.failure[i];
         if (compare_pi_pj(i + 1, j, A)) i++;
         state.failure[j] = i;
