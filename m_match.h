@@ -1,6 +1,7 @@
 /*
     m_match.h
     Implementation of the mapped matching algorithm by Amir, Farach and Muthukrishnan.
+    Adapted from my previous work on parameterised matching: https://github.com/djmylt/parameterised_matching
     More information is available here: http://www.cs.rutgers.edu/~farach/pubs/ParametrizedMatching.pdf
     This variant of the KMP algorithm is from lecture slides courtesy of Dr. Raphaël Clifford: (private link) https://www.cs.bris.ac.uk/Teaching/Resources/COMS21103/material-dima/string_matching.pdf
 */
@@ -11,14 +12,12 @@
 #include <stdlib.h>
 
 /*
-    int compare_pi_tj(int i, char t_j, rbtree text, int j, int* A)
+    compare_pi_tj
     Implements the Compare(p_i, t_j) function by Amir et al.
     Parameters:
-        int    i    - Index of pattern
-        char   t_j  - Current character in text
-        rbtree text - Red/Black tree of when each character in the alphabet last occured in the text
-        int    j    - Index of text
-        int*   A    - Predecessor table
+        int    i      - Index of pattern
+        int    t_pred - Last occurance of T
+        int*   A      - Predecessor table
     Returns int:
         1 if p_i \cong t_j
         0 otherwise
@@ -28,7 +27,7 @@ int compare_pi_tj(int i, int t_pred, int* A) {
 }
 
 /*
-    int compare_pi_pj(int i, char* p, int j, int* A)
+    compare_pi_pj
     Implements the Compare(p_i, p_j) function by Amir et al.
     Parameters:
         int   i - Index i of pattern
@@ -43,14 +42,13 @@ int compare_pi_pj(int i, int j, int* A) {
 }
 
 /*
-    typedef struct mmatch_state_t *mmatch_state
+    typedef struct mmatch_state
     Structure to hold current state of algorithm.
     Components:
         int*   A       - Predecessor table for pattern
         int    m       - Length of pattern
         int    i       - Current index of pattern
         int*   failure - Failure table for pattern
-        rbtree text    - Predecessor tree for text
 */
 typedef struct {
     int* A;
@@ -60,15 +58,15 @@ typedef struct {
 } mmatch_state;
 
 /*
-    mmatch_state mmatch_build(char* P, int m)
+    mmatch_build
     Creates an initial state for m-match algorithm.
     Parameters:
-        char* P - Pattern
-        int   m - Length of pattern
+        int *A - Predecessor list for pattern
+        int m  - Length of pattern
     Returns mmatch_state:
         Initial state for algorithm
 */
-mmatch_state mmatch_build(int* A, int m) {
+mmatch_state mmatch_build(int *A, int m) {
     int i, j;
     mmatch_state state;
     state.A = malloc(m * sizeof(int));
@@ -87,12 +85,12 @@ mmatch_state mmatch_build(int* A, int m) {
 }
 
 /*
-    int mmatch_stream(mmatch_state state, char T_j)
+    mmatch_stream
     Returns whether an m-match occurs for character T_j.
     Parameters:
-        mmatch_state state - The current state of the algorithm
-        char         T_j   - The next character in the text
-        int          j     - The current index of the text
+        mmatch_state *state  - The current state of the algorithm
+        int          t_pred  - The predecessor of T[j]
+        int          j       - The current index of the text
     Returns int:
         j  if P m-matches T[j - m + 1:j]
         -1 otherwise
@@ -111,6 +109,12 @@ int mmatch_stream(mmatch_state *state, int t_pred, int j) {
     return result;
 }
 
+/*
+    mmatch_free
+    Frees an mmatch_state from memory.
+    Parameters:
+        mmatch_state *state - The state to free
+*/
 void mmatch_free(mmatch_state *state) {
     free(state->A);
     free(state->failure);
