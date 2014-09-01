@@ -1,8 +1,8 @@
 /*
     m_match.h
-    Implementation of the mapped matching algorithm by Amir, Farach and Muthukrishnan.
+    Implementation of the mapped matching algorithm by Amir, Farach and Muthukrishnan and used by Jalsenius, Porat and Sach.
     Adapted from my previous work on parameterised matching: https://github.com/djmylt/parameterised_matching
-    More information is available here: http://www.cs.rutgers.edu/~farach/pubs/ParametrizedMatching.pdf
+    More information is available here: http://www.cs.rutgers.edu/~farach/pubs/ParametrizedMatching.pdf http://arxiv.org/pdf/1109.5269v3.pdf
     This variant of the KMP algorithm is from lecture slides courtesy of Dr. Raphaël Clifford: (private link) https://www.cs.bris.ac.uk/Teaching/Resources/COMS21103/material-dima/string_matching.pdf
 */
 
@@ -15,9 +15,9 @@
     compare_pi_tj
     Implements the Compare(p_i, t_j) function by Amir et al.
     Parameters:
-        int    i      - Index of pattern
-        int    t_pred - Last occurance of T
-        int*   A      - Predecessor table
+        int  i      - Index of pattern
+        int  t_pred - Last occurance of T
+        int* A      - Predecessor table
     Returns int:
         1 if p_i \cong t_j
         0 otherwise
@@ -28,9 +28,9 @@
     compare_pi_pj
     Implements the Compare(p_i, p_j) function by Amir et al.
     Parameters:
-        int   i - Index i of pattern
-        int   j - Index j of pattern
-        int*  A - Predecessor table
+        int  i - Index i of pattern
+        int  j - Index j of pattern
+        int* A - Predecessor table
     Returns int:
         1 if p_i \cong p_j
         0 otherwise
@@ -41,10 +41,10 @@
     typedef struct mmatch_state
     Structure to hold current state of algorithm.
     Components:
-        int*   A       - Predecessor table for pattern
-        int    m       - Length of pattern
-        int    i       - Current index of pattern
-        int*   failure - Failure table for pattern
+        int* A       - Predecessor table for pattern
+        int  m       - Length of pattern
+        int  i       - Current index of pattern
+        int* failure - Failure table for pattern
 */
 typedef struct {
     int* A;
@@ -84,9 +84,9 @@ mmatch_state mmatch_build(int *A, int m) {
     mmatch_stream
     Returns whether an m-match occurs for character T_j.
     Parameters:
-        mmatch_state *state  - The current state of the algorithm
-        int          t_pred  - The predecessor of T[j]
-        int          j       - The current index of the text
+        mmatch_state *state - The current state of the algorithm
+        int          t_pred - The predecessor of T[j]
+        int          j      - The current index of the text
     Returns int:
         j  if P m-matches T[j - m + 1:j]
         -1 otherwise
