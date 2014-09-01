@@ -22,9 +22,7 @@
         1 if p_i \cong t_j
         0 otherwise
 */
-int compare_pi_tj(int i, int t_pred, int* A) {
-    return ((A[i] == t_pred) || ((A[i] == 0) && (t_pred > i)));
-}
+#define compare_pi_tj(i, t_pred, A) ((A[i] == t_pred) || ((A[i] == 0) && (t_pred > i)))
 
 /*
     compare_pi_pj
@@ -37,9 +35,7 @@ int compare_pi_tj(int i, int t_pred, int* A) {
         1 if p_i \cong p_j
         0 otherwise
 */
-int compare_pi_pj(int i, int j, int* A) {
-    return ((A[i] == A[j]) || ((A[i] == 0) && (A[j] > i)));
-}
+#define compare_pi_pj(i, j, A) ((A[i] == A[j]) || ((A[i] == 0) && (A[j] > i)))
 
 /*
     typedef struct mmatch_state
