@@ -69,11 +69,11 @@ mmatch_state mmatch_build(int *A, int m) {
     for (i = 0; i < m; i++) state.A[i] = A[i];
     state.failure = malloc(m * sizeof(int));
     i = -1;
-    state.failure[0] = -1;
+    state.failure[0] = 1;
     for (j = 1; j < m; j++) {
-        while (i > -1 && !compare_pi_pj(i + 1, j, A)) i = state.failure[i];
+        while (i > -1 && !compare_pi_pj(i + 1, j, A)) i -= state.failure[i];
         if (compare_pi_pj(i + 1, j, A)) i++;
-        state.failure[j] = i;
+        state.failure[j] = j - i;
     }
     state.m = m;
     state.i = -1;
@@ -95,11 +95,11 @@ int mmatch_stream(mmatch_state *state, int t_pred, int j) {
     int* A = state->A;
     int* failure = state->failure;
     int i = state->i, result = -1;
-    while (i > -1 && !compare_pi_tj(i + 1, t_pred, A)) i = failure[i];
+    while (i > -1 && !compare_pi_tj(i + 1, t_pred, A)) i -= failure[i];
     if (compare_pi_tj(i + 1, t_pred, A)) i++;
     if (i == state->m - 1) {
         result = j;
-        i = failure[i];
+        i -= failure[i];
     }
     state->i = i;
     return result;
