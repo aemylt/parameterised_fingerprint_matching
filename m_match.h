@@ -16,13 +16,15 @@
     Implements the Compare(p_i, t_j) function by Amir et al.
     Parameters:
         int  i      - Index of pattern
-        int  t_pred - Last occurance of T
-        int* A      - Predecessor table
+        int  t_pred - Last occurance of T[j]
+        int  i_pred - Last occurance of P[i]
     Returns int:
-        1 if p_i \cong t_j
+        1 if P[i] \cong T[j]
         0 otherwise
 */
-#define compare_pi_tj(i, t_pred, A) ((A[i] == t_pred) || ((A[i] == 0) && (t_pred > i)))
+int compare_pi_tj(int i, int t_pred, int i_pred) {
+    return ((i_pred == t_pred) || ((i_pred == 0) && (t_pred > i)));
+}
 
 /*
     compare_pi_pj
@@ -31,57 +33,103 @@
         int  i - Index i of pattern
         int  j - Index j of pattern
         int* A - Predecessor table
+        int  i_pred - Last occurance of P[i]
+        int  j_pred - Last occurance of P[j]
     Returns int:
-        1 if p_i \cong p_j
+        1 if P[i] \cong P[j]
         0 otherwise
 */
-#define compare_pi_pj(i, j, A) ((A[i] == A[j]) || ((A[i] == 0) && (A[j] > i)))
+int compare_pi_pj(int i, int j, int i_pred, int j_pred) {
+    return ((i_pred == j_pred) || ((i_pred == 0) && (j_pred > i)));
+}
 
 /*
     typedef struct mmatch_state
     Structure to hold current state of algorithm.
     Components:
-        int* A       - Predecessor table for pattern
-        int  m       - Length of pattern
-        int  i       - Current index of pattern
-        int* failure - Failure table for pattern
+        int *k         - Length before predecessor changes from zero
+        int *c         - Value after predecessor changes
+        int m          - Length of pattern
+        int i          - Current index of pattern
+        int *failure   - Failure table for pattern
+        int period     - Length of period
+        int has_break  - Does the period break?
+        int pred_break - The predecessor of the character that breaks the period
 */
 typedef struct {
-    int* A;
-    int m;
-    int i;
-    int* failure;
+    int *k, *c, m, i, *failure, period, has_break, pred_break;
 } mmatch_state;
+
+/*
+    get_pred
+    Returns the predecessor of the character.
+    Parameters:
+        mmatch_state state - The state of the algorithm
+        int          i     - The index of the pattern
+    Returns int:
+        How long ago was the last time this character occured.
+        0 if this is the first time we've seen the character.
+*/
+int get_pred(mmatch_state state, int i) {
+    if ((state.has_break) && (i == state.m - 1)) return state.pred_break;
+    else {
+        int index = i % state.period;
+        return (i < state.k[index]) ? 0 : state.c[index];
+    }
+}
 
 /*
     mmatch_build
     Creates an initial state for m-match algorithm.
     Parameters:
-        int *A    - Predecessor list for pattern
-        int m     - Minimum length of pattern
-        int p_len - Maximum length of pattern
+        int *p_pred - Predecessor list for pattern
+        int m       - Minimum length of pattern
+        int p_len   - Maximum length of pattern
     Returns mmatch_state:
         Initial state for algorithm
 */
-mmatch_state mmatch_build(int *A, int m, int p_len) {
-    int i, j;
+mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
+    int i, j, k;
     mmatch_state state;
-    state.A = malloc(p_len * sizeof(int));
-    for (i = 0; i < m; i++) state.A[i] = A[i];
-    state.failure = malloc(p_len * sizeof(int));
+    state.failure = malloc(m * sizeof(int));
     i = -1;
     state.failure[0] = 1;
     for (j = 1; j < m; j++) {
-        while (i > -1 && !compare_pi_pj(i + 1, j, A)) i -= state.failure[i];
-        if (compare_pi_pj(i + 1, j, A)) i++;
+        while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i -= state.failure[i];
+        if (compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i++;
         state.failure[j] = j - i;
     }
 
+    state.has_break = 0;
+    state.period = state.failure[m - 1];
+    state.k = malloc(state.period * sizeof(int));
+    state.c = malloc(state.period * sizeof(int));
+
+    for (j = 0; j < state.period; j++) {
+        k = j;
+        state.c[j] = 0;
+        state.k[j] = 0;
+        while ((k < m) && state.c[j] == 0) {
+            if (p_pred[k] != 0) {
+                state.c[j] = p_pred[k];
+                state.k[j] = k;
+            }
+            k += state.period;
+        }
+    }
+
+    j = m;
     while ((j < p_len) && (state.failure[j - 1] < m)) {
-        state.A[j] = A[j];
-        while (i > -1 && !compare_pi_pj(i + 1, j, A)) i -= state.failure[i];
-        if (compare_pi_pj(i + 1, j, A)) i++;
+        while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i -= state.failure[i];
+        if (compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i++;
         state.failure[j] = j - i;
+        if (state.failure[j] >= m) {
+            state.has_break = 1;
+            state.pred_break = p_pred[j];
+        } else if ((state.c[j % state.period] == 0) && (p_pred[j] != 0)) {
+            state.c[j % state.period] = p_pred[j];
+            state.k[j % state.period] = j;
+        }
         j++;
     }
     state.m = j;
@@ -101,11 +149,10 @@ mmatch_state mmatch_build(int *A, int m, int p_len) {
         -1 otherwise
 */
 int mmatch_stream(mmatch_state *state, int t_pred, int j) {
-    int* A = state->A;
     int* failure = state->failure;
     int i = state->i, result = -1;
-    while (i > -1 && !compare_pi_tj(i + 1, t_pred, A)) i -= failure[i];
-    if (compare_pi_tj(i + 1, t_pred, A)) i++;
+    while (i > -1 && !compare_pi_tj(i + 1, t_pred, get_pred(*state, i + 1))) i -= failure[i];
+    if (compare_pi_tj(i + 1, t_pred, get_pred(*state, i + 1))) i++;
     if (i == state->m - 1) {
         result = j;
         i -= failure[i];
@@ -121,8 +168,9 @@ int mmatch_stream(mmatch_state *state, int t_pred, int j) {
         mmatch_state *state - The state to free
 */
 void mmatch_free(mmatch_state *state) {
-    free(state->A);
     free(state->failure);
+    free(state->k);
+    free(state->c);
 }
 
 #endif
