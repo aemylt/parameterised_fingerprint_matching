@@ -57,17 +57,18 @@ typedef struct {
     mmatch_build
     Creates an initial state for m-match algorithm.
     Parameters:
-        int *A - Predecessor list for pattern
-        int m  - Length of pattern
+        int *A    - Predecessor list for pattern
+        int m     - Minimum length of pattern
+        int p_len - Maximum length of pattern
     Returns mmatch_state:
         Initial state for algorithm
 */
-mmatch_state mmatch_build(int *A, int m) {
+mmatch_state mmatch_build(int *A, int m, int p_len) {
     int i, j;
     mmatch_state state;
-    state.A = malloc(m * sizeof(int));
+    state.A = malloc(p_len * sizeof(int));
     for (i = 0; i < m; i++) state.A[i] = A[i];
-    state.failure = malloc(m * sizeof(int));
+    state.failure = malloc(p_len * sizeof(int));
     i = -1;
     state.failure[0] = 1;
     for (j = 1; j < m; j++) {
@@ -75,7 +76,15 @@ mmatch_state mmatch_build(int *A, int m) {
         if (compare_pi_pj(i + 1, j, A)) i++;
         state.failure[j] = j - i;
     }
-    state.m = m;
+
+    while ((j < p_len) && (state.failure[j - 1] < m)) {
+        state.A[j] = A[j];
+        while (i > -1 && !compare_pi_pj(i + 1, j, A)) i -= state.failure[i];
+        if (compare_pi_pj(i + 1, j, A)) i++;
+        state.failure[j] = j - i;
+        j++;
+    }
+    state.m = j;
     state.i = -1;
     return state;
 }

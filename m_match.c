@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 void stream_test(char *T, int n, int *P, int m, char *sigma, int s_sigma, int *correct) {
-    mmatch_state state = mmatch_build(P, m);
+    mmatch_state state = mmatch_build(P, m, m);
     int j, pred, *predecessor = malloc(s_sigma * sizeof(int));
     for (j = 0; j < s_sigma; j++) predecessor[j] = -1;
     hash_lookup t_pred = hashlookup_build(sigma, predecessor, s_sigma);

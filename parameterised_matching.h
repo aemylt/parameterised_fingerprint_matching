@@ -74,9 +74,22 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
 
     while ((1 << lm) < m) lm++;
 
-    mmatch_state mmatch = mmatch_build(predecessor, 3 * s_sigma * lm);
+    j = 3 * s_sigma * lm;
+    if (j > m) j = m;
+    mmatch_state mmatch = mmatch_build(predecessor, j, m);
 
     j = mmatch.m;
+
+    if (j == m) {
+        for (i = 0; i < n; i++) {
+            lookup = hashlookup_search(t_pred, T[i]);
+            lookup = (lookup == -1) ? 0 : i - lookup;
+            hashlookup_edit(&t_pred, T[i], i);
+            if (mmatch_stream(&mmatch, lookup, i) == i) results[matches++] = i;
+        }
+        return matches;
+    }
+
     i = 0;
     pattern_row *P_i = malloc(lm * sizeof(pattern_row));
     while ((j << 2) < m) {
