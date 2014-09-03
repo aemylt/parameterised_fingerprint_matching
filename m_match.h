@@ -57,6 +57,11 @@ typedef struct failure_list_t {
     int start, failure;
 } failure_list;
 
+typedef struct zero_list_t {
+    struct zero_list_t *pred, *succ;
+    int index;
+} zero_list;
+
 /*
     typedef struct mmatch_state
     Structure to hold current state of algorithm.
@@ -76,6 +81,7 @@ typedef struct failure_list_t {
 typedef struct {
     int *k, *c, m, i, *failure_table, period, has_break, pred_break, failure_break;
     failure_list *failure, *failure_reset;
+    zero_list *zeros, *zero_reset;
 } mmatch_state;
 
 /*
@@ -191,8 +197,23 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
             }
             j++;
         }
-
         while ((state.failure->pred != NULL) && (state.failure->pred->start >= i)) state.failure = state.failure->pred;
+
+        state.zeros = malloc(sizeof(zero_list));
+        state.zeros->index = 0;
+        state.zeros->pred = NULL;
+        state.zeros->succ = NULL;
+        for (j = 1; j < m; j++) {
+            if (p_pred[j] == 0) {
+                state.zeros->succ = malloc(sizeof(zero_list));
+                state.zeros->succ->pred = state.zeros;
+                state.zeros = state.zeros->succ;
+                state.zeros->index = j;
+                state.zeros->succ = NULL;
+            }
+        }
+
+        while ((state.zeros->pred != NULL) && (state.zeros->pred->index >= i)) state.zeros = state.zeros->pred;
 
         j = m;
         failure_j = state.failure_table[j - 1];
@@ -209,6 +230,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
                 state.pred_break = p_pred[j];
                 state.failure_break = i;
                 state.failure_reset = state.failure;
+                state.zero_reset = state.zeros;
             } else if ((state.c[j % state.period] == 0) && (p_pred[j] != 0)) {
                 state.c[j % state.period] = p_pred[j];
                 state.k[j % state.period] = j;
@@ -216,6 +238,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
             j++;
         }
 
+        while (state.zeros->pred != NULL) state.zeros = state.zeros->pred;
         while (state.failure->pred != NULL) state.failure = state.failure->pred;
 
     } else {
@@ -263,11 +286,18 @@ void mmatch_free(mmatch_state *state) {
     free(state->k);
     if (state->period) {
         free(state->c);
+        while (state->zeros->pred != NULL) state->zeros = state->zeros->pred;
+        while (state->zeros->succ != NULL) {
+            state->zeros = state->zeros->succ;
+            free(state->zeros->pred);
+        }
+        free(state->zeros);
         while (state->failure->pred != NULL) state->failure = state->failure->pred;
         while (state->failure->succ != NULL) {
             state->failure = state->failure->succ;
             free(state->failure->pred);
         }
+        free(state->failure);
     } else {
         free(state->failure_table);
     }
