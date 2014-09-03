@@ -162,21 +162,20 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
 
     state.has_break = 0;
     if ((state.failure_table[m - 1] << 1) <= m) {
-        int k, failure_j;
         state.period = state.failure_table[m - 1];
         state.k = realloc(state.k, state.period * sizeof(int));
         state.c = malloc(state.period * sizeof(int));
 
         for (j = 0; j < state.period; j++) {
-            k = j;
+            i = j;
             state.c[j] = 0;
             state.k[j] = 0;
-            while ((k < m) && state.c[j] == 0) {
-                if (p_pred[k] != 0) {
-                    state.c[j] = p_pred[k];
-                    state.k[j] = k;
+            while ((i < m) && state.c[j] == 0) {
+                if (p_pred[i] != 0) {
+                    state.c[j] = p_pred[i];
+                    state.k[j] = i;
                 }
-                k += state.period;
+                i += state.period;
             }
         }
 
@@ -204,7 +203,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
         state.zeros->pred = NULL;
         state.zeros->succ = NULL;
         for (j = 1; j < m; j++) {
-            if (p_pred[j] == 0) {
+            if (!p_pred[j]) {
                 state.zeros->succ = malloc(sizeof(zero_list));
                 state.zeros->succ->pred = state.zeros;
                 state.zeros = state.zeros->succ;
@@ -216,16 +215,15 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
         while ((state.zeros->pred != NULL) && (state.zeros->pred->index >= i)) state.zeros = state.zeros->pred;
 
         j = m;
-        failure_j = state.failure_table[j - 1];
+        i = j - 1 - state.failure_table[m - 1];
         free(state.failure_table);
-        while ((j < p_len) && ((failure_j << 1) < m)) {
+        while ((j < p_len) && (!state.has_break)) {
             while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i = get_failure(&state, i);
             if (compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) {
                 i++;
                 update_failure(&state, i);
             }
-            failure_j = j - i;
-            if ((failure_j << 1) >= m) {
+            if (((j - i) << 1) >= m) {
                 state.has_break = 1;
                 state.pred_break = p_pred[j];
                 state.failure_break = i;
