@@ -215,7 +215,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
         while ((state.zeros->pred != NULL) && (state.zeros->pred->index >= i)) state.zeros = state.zeros->pred;
 
         j = m;
-        i = j - 1 - state.failure_table[m - 1];
+        i = m - 1 - state.failure_table[m - 1];
         free(state.failure_table);
         while ((j < p_len) && (!state.has_break)) {
             while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i = get_failure(&state, i);
