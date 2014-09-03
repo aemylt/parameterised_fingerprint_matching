@@ -71,6 +71,7 @@ typedef struct {
         0 if this is the first time we've seen the character.
 */
 int get_pred(mmatch_state state, int i) {
+    if (!state.period) return state.k[i];
     if ((state.has_break) && (i == state.m - 1)) return state.pred_break;
     else {
         int index = i % state.period;
@@ -93,44 +94,51 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
     mmatch_state state;
     state.failure = malloc(m * sizeof(int));
     i = -1;
+    state.k = malloc(m * sizeof(int));
     state.failure[0] = 1;
+    state.k[0] = 0;
     for (j = 1; j < m; j++) {
+        state.k[j] = p_pred[j];
         while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i -= state.failure[i];
         if (compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i++;
         state.failure[j] = j - i;
     }
 
     state.has_break = 0;
-    state.period = state.failure[m - 1];
-    state.k = malloc(state.period * sizeof(int));
-    state.c = malloc(state.period * sizeof(int));
+    if ((state.failure[m - 1] << 1) < m) {
+        state.period = state.failure[m - 1];
+        state.k = realloc(state.k, state.period * sizeof(int));
+        state.c = malloc(state.period * sizeof(int));
 
-    for (j = 0; j < state.period; j++) {
-        k = j;
-        state.c[j] = 0;
-        state.k[j] = 0;
-        while ((k < m) && state.c[j] == 0) {
-            if (p_pred[k] != 0) {
-                state.c[j] = p_pred[k];
-                state.k[j] = k;
+        for (j = 0; j < state.period; j++) {
+            k = j;
+            state.c[j] = 0;
+            state.k[j] = 0;
+            while ((k < m) && state.c[j] == 0) {
+                if (p_pred[k] != 0) {
+                    state.c[j] = p_pred[k];
+                    state.k[j] = k;
+                }
+                k += state.period;
             }
-            k += state.period;
         }
-    }
 
-    j = m;
-    while ((j < p_len) && (state.failure[j - 1] < m)) {
-        while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i -= state.failure[i];
-        if (compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i++;
-        state.failure[j] = j - i;
-        if (state.failure[j] >= m) {
-            state.has_break = 1;
-            state.pred_break = p_pred[j];
-        } else if ((state.c[j % state.period] == 0) && (p_pred[j] != 0)) {
-            state.c[j % state.period] = p_pred[j];
-            state.k[j % state.period] = j;
+        j = m;
+        while ((j < p_len) && ((state.failure[j - 1] << 1) < m)) {
+            while (i > -1 && !compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i -= state.failure[i];
+            if (compare_pi_pj(i + 1, j, p_pred[i + 1], p_pred[j])) i++;
+            state.failure[j] = j - i;
+            if ((state.failure[j] << 1) >= m) {
+                state.has_break = 1;
+                state.pred_break = p_pred[j];
+            } else if ((state.c[j % state.period] == 0) && (p_pred[j] != 0)) {
+                state.c[j % state.period] = p_pred[j];
+                state.k[j % state.period] = j;
+            }
+            j++;
         }
-        j++;
+    } else {
+        state.period = 0;
     }
     state.m = j;
     state.i = -1;
@@ -170,7 +178,7 @@ int mmatch_stream(mmatch_state *state, int t_pred, int j) {
 void mmatch_free(mmatch_state *state) {
     free(state->failure);
     free(state->k);
-    free(state->c);
+    if (state->period) free(state->c);
 }
 
 #endif
