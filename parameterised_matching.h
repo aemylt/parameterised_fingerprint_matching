@@ -87,6 +87,7 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
             hashlookup_edit(&t_pred, T[i], i);
             if (mmatch_stream(&mmatch, lookup, i) == i) results[matches++] = i;
         }
+        mmatch_free(&mmatch);
         return matches;
     }
 
@@ -170,6 +171,7 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
         if (mmatch_stream(&mmatch, lookup, i) == i) add_occurance(printer, T_prev, i, &P_i[0], tmp);
     }
 
+    mmatch_free(&mmatch);
     hashlookup_free(&t_pred);
     for (i = 0; i < lm; i++) {
         fingerprint_free(P_i[i].P);
