@@ -1,7 +1,7 @@
 #ifndef PARAMETERISED_MATCHING
 #define PARAMETERISED_MATCHING
 
-#include "hash_lookup.h"
+#include "rbtree.c"
 #include "karp_rabin.h"
 #include "m_match.h"
 #include <stdlib.h>
@@ -24,6 +24,25 @@ typedef struct {
     viable_occurance VOs[2];
     zero_item *to_zero;
 } pattern_row;
+
+/*
+    compare_char
+    Compares two characters. Used for the Red/Black Tree
+    Parameters:
+        void* leftp  - First character
+        void* rightp - Second character
+    Returns int:
+        -1 if leftp <  rightp
+         0 if leftp == rightp
+         1 otherwise
+*/
+int compare_char(void* leftp, void* rightp) {
+    char left = (char)leftp;
+    char right = (char)rightp;
+    if (left < right) return -1;
+    else if (left > right) return 1;
+    else return 0;
+}
 
 void shift_row(fingerprinter printer, pattern_row *P_i, fingerprint tmp) {
     if (P_i->count <= 2) {
@@ -57,18 +76,16 @@ void add_occurance(fingerprinter printer, fingerprint T_f, int location, pattern
     }
 }
 
-int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma, int alpha, int *results) {
-    int i, j, k, *predecessor = malloc(m * sizeof(int)), lookup, lm = 0, matches = 0, index;
-    for (i = 0; i < s_sigma; i++) predecessor[i] = -1;
-
-    hash_lookup p_pred = hashlookup_build(sigma, predecessor, s_sigma), t_pred = hashlookup_build(sigma, predecessor, s_sigma);
+int parameterised_match(char *T, int n, char *P, int m, int alpha, int *results) {
+    int i, j, k, *predecessor = malloc(m * sizeof(int)), lookup, lm = 0, matches = 0, index, s_sigma = 0;
+    rbtree p_pred = rbtree_create(), t_pred = rbtree_create();
 
     for (i = 0; i < m; i++) {
-        lookup = hashlookup_search(p_pred, P[i]);
-        predecessor[i] = (lookup == -1) ? 0 : i - lookup;
-        hashlookup_edit(&p_pred, P[i], i);
+        predecessor[i] = i - (int)rbtree_lookup(p_pred, (void*)P[i], (void*)i, compare_char);
+        if (!predecessor[i]) s_sigma++;
+        rbtree_insert(p_pred, (void*)P[i], (void*)i, compare_char);
     }
-    hashlookup_free(&p_pred);
+    rbtree_destroy(p_pred);
 
     fingerprinter printer = fingerprinter_build(n, alpha);
 
@@ -82,11 +99,11 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
 
     if (j == m) {
         for (i = 0; i < n; i++) {
-            lookup = hashlookup_search(t_pred, T[i]);
-            lookup = (lookup == -1) ? 0 : i - lookup;
-            hashlookup_edit(&t_pred, T[i], i);
+            lookup = i - (int)rbtree_lookup(t_pred, (void*)T[i], (void*)i, compare_char);
+            rbtree_insert(t_pred, (void*)T[i], (void*)i, compare_char);
             if (mmatch_stream(&mmatch, lookup, i) == i) results[matches++] = i;
         }
+        rbtree_destroy(t_pred);
         mmatch_free(&mmatch);
         return matches;
     }
@@ -130,10 +147,8 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
     mpz_init(r_z);
 
     for (i = 0; i < n; i++) {
-        lookup = hashlookup_search(t_pred, T[i]);
-        lookup = (lookup == -1) ? 0 : i - lookup;
-
-        hashlookup_edit(&t_pred, T[i], i);
+        lookup = i - (int)rbtree_lookup(t_pred, (void*)T[i], (void*)i, compare_char);
+        rbtree_insert(t_pred, (void*)T[i], (void*)i, compare_char);
         set_fingerprint(printer, &lookup, 1, T_cur);
         fingerprint_concat(printer, T_prev, T_cur, tmp);
         mpz_set(r_z, T_prev->r_k);
@@ -172,7 +187,7 @@ int parameterised_match(char *T, int n, char *P, int m, char *sigma, int s_sigma
     }
 
     mmatch_free(&mmatch);
-    hashlookup_free(&t_pred);
+    rbtree_destroy(t_pred);
     for (i = 0; i < lm; i++) {
         fingerprint_free(P_i[i].P);
         fingerprint_free(P_i[i].period_f);
