@@ -25,24 +25,7 @@ typedef struct {
     zero_item *to_zero;
 } pattern_row;
 
-/*
-    compare_char
-    Compares two characters. Used for the Red/Black Tree
-    Parameters:
-        void* leftp  - First character
-        void* rightp - Second character
-    Returns int:
-        -1 if leftp <  rightp
-         0 if leftp == rightp
-         1 otherwise
-*/
-int compare_char(void* leftp, void* rightp) {
-    char left = (char)leftp;
-    char right = (char)rightp;
-    if (left < right) return -1;
-    else if (left > right) return 1;
-    else return 0;
-}
+typedef void* (*element_func)(void** T, int i);
 
 void shift_row(fingerprinter printer, pattern_row *P_i, fingerprint tmp) {
     if (P_i->count <= 2) {
@@ -76,14 +59,14 @@ void add_occurance(fingerprinter printer, fingerprint T_f, int location, pattern
     }
 }
 
-int parameterised_match(char *T, int n, char *P, int m, int alpha, int *results) {
+int parameterised_match(void **T, int n, void **P, int m, int alpha, compare_func compare, element_func get_element, int *results) {
     int i, j, k, *predecessor = malloc(m * sizeof(int)), lookup, lm = 0, matches = 0, index, s_sigma = 0;
     rbtree p_pred = rbtree_create(), t_pred = rbtree_create();
 
     for (i = 0; i < m; i++) {
-        predecessor[i] = i - (int)rbtree_lookup(p_pred, (void*)P[i], (void*)i, compare_char);
+        predecessor[i] = i - (int)rbtree_lookup(p_pred, get_element(P, i), (void*)i, compare);
         if (!predecessor[i]) s_sigma++;
-        rbtree_insert(p_pred, (void*)P[i], (void*)i, compare_char);
+        rbtree_insert(p_pred, get_element(P, i), (void*)i, compare);
     }
     rbtree_destroy(p_pred);
 
@@ -99,8 +82,8 @@ int parameterised_match(char *T, int n, char *P, int m, int alpha, int *results)
 
     if (j == m) {
         for (i = 0; i < n; i++) {
-            lookup = i - (int)rbtree_lookup(t_pred, (void*)T[i], (void*)i, compare_char);
-            rbtree_insert(t_pred, (void*)T[i], (void*)i, compare_char);
+            lookup = i - (int)rbtree_lookup(t_pred, get_element(T, i), (void*)i, compare);
+            rbtree_insert(t_pred, get_element(T, i), (void*)i, compare);
             if (mmatch_stream(&mmatch, lookup, i) == i) results[matches++] = i;
         }
         rbtree_destroy(t_pred);
@@ -147,8 +130,8 @@ int parameterised_match(char *T, int n, char *P, int m, int alpha, int *results)
     mpz_init(r_z);
 
     for (i = 0; i < n; i++) {
-        lookup = i - (int)rbtree_lookup(t_pred, (void*)T[i], (void*)i, compare_char);
-        rbtree_insert(t_pred, (void*)T[i], (void*)i, compare_char);
+        lookup = i - (int)rbtree_lookup(t_pred, get_element(T, i), (void*)i, compare);
+        rbtree_insert(t_pred, get_element(T, i), (void*)i, compare);
         set_fingerprint(printer, &lookup, 1, T_cur);
         fingerprint_concat(printer, T_prev, T_cur, tmp);
         mpz_set(r_z, T_prev->r_k);
