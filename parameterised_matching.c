@@ -40,5 +40,10 @@ int main(void) {
     if (matches) printf("%d\n", results[matches - 1]);
     else printf("No matches\n");
 
+    matches = parameterised_match("aaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaaabbbbbbbbbbbbbbaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaaabbbbbbbbbbbbbb", 200, "aaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaaabbbb", 90, "ab", 2, 0, results);
+    for (i = 0; i < matches - 1; i++) printf("%d, ", results[i]);
+    if (matches) printf("%d\n", results[matches - 1]);
+    else printf("No matches\n");
+
     return 0;
 }

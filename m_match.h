@@ -109,17 +109,33 @@ int get_pred(mmatch_state state, int i) {
         int          i      - The index of the pattern
     Returns int:
         Length of the longest prefix that also p-matches a suffix.
-        Failure list in parameter state also updated.
+        Failure list and zero list in parameter state also updated.
 */
 int get_failure(mmatch_state *state, int i) {
     if (!state->period) return i - state->failure_table[i];
-    if ((state->has_break) && (i == state->m - 1)) {
+    if (i == state->m - 1) {
+        i = (state->has_break) ? state->failure_break : i - state->failure->failure;
         state->failure = state->failure_reset;
-        return state->failure_break;
+        state->zeros = state->zero_reset;
+        return i;
     }
-    int index = i - state->failure->failure;
-    if ((state->failure->pred != NULL) && (index < state->failure->start)) state->failure = state->failure->pred;
-    return index;
+    if (i == state->m - 2) {
+        i -= state->failure->failure;
+        if ((state->failure->pred != NULL) && (i < state->failure->start)) state->failure = state->failure->pred;
+        while ((state->zeros->pred != NULL) && (i <= state->zeros->index)) state->zeros = state->zeros->pred;
+        return i;
+    }
+
+    if ((state->failure->failure > 1) && (state->zeros->index < i) && (state->zeros->index >= state->failure->start) && ((i - state->zeros->index) % state->failure->failure == 0)) {
+        i = state->zeros->index;
+        if (state->zeros->pred != NULL) state->zeros = state->zeros->pred;
+        return i;
+    }
+
+    i = i - ((i - state->failure->start) / state->failure->failure + 1) * state->failure->failure;
+    if (state->failure->pred != NULL) state->failure = state->failure->pred;
+    while ((state->zeros->pred != NULL) && (i <= state->zeros->index)) state->zeros = state->zeros->pred;
+    return i;
 }
 
 /*
@@ -129,10 +145,13 @@ int get_failure(mmatch_state *state, int i) {
         mmatch_state *state - The state of the algorithm
         int          i      - The index of the pattern
     Returns void:
-        Failure list in parameter state updated.
+        Failure list and zero list in parameter state updated.
 */
 void update_failure(mmatch_state *state, int i) {
-    if ((state->period) && (state->failure->succ != NULL) && (i >= state->failure->succ->start)) state->failure = state->failure->succ;
+    if (state->period) {
+        if ((state->failure->succ != NULL) && (i >= state->failure->succ->start)) state->failure = state->failure->succ;
+        if ((state->zeros->succ != NULL) && (i > state->zeros->succ->index)) state->zeros = state->zeros->succ;
+    }
 }
 
 /*
@@ -161,7 +180,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
     }
 
     state.has_break = 0;
-    if (state.failure_table[m - 1] <= m) {
+    if ((state.failure_table[m - 1] << 1) <= m) {
         state.period = state.failure_table[m - 1];
         state.k = realloc(state.k, state.period * sizeof(int));
         state.c = malloc(state.period * sizeof(int));
@@ -223,12 +242,10 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
                 i++;
                 update_failure(&state, i);
             }
-            if (j - i >= m) {
+            if (((j - i) << 1) >= m) {
                 state.has_break = 1;
                 state.pred_break = p_pred[j];
                 state.failure_break = i;
-                state.failure_reset = state.failure;
-                state.zero_reset = state.zeros;
             } else if ((state.c[j % state.period] == 0) && (p_pred[j] != 0)) {
                 state.c[j % state.period] = p_pred[j];
                 state.k[j % state.period] = j;
@@ -236,14 +253,16 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
             j++;
         }
 
+        state.failure_reset = state.failure;
+        state.zero_reset = state.zeros;
+
         while (state.zeros->pred != NULL) state.zeros = state.zeros->pred;
         while (state.failure->pred != NULL) state.failure = state.failure->pred;
 
-    } else {
-        state.period = 0;
-    }
+    } else state.period = 0;
     state.m = j;
     state.i = -1;
+
 
     return state;
 }
