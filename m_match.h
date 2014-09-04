@@ -161,7 +161,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
     }
 
     state.has_break = 0;
-    if ((state.failure_table[m - 1] << 1) <= m) {
+    if (state.failure_table[m - 1] <= m) {
         state.period = state.failure_table[m - 1];
         state.k = realloc(state.k, state.period * sizeof(int));
         state.c = malloc(state.period * sizeof(int));
@@ -223,7 +223,7 @@ mmatch_state mmatch_build(int *p_pred, int m, int p_len) {
                 i++;
                 update_failure(&state, i);
             }
-            if (((j - i) << 1) >= m) {
+            if (j - i >= m) {
                 state.has_break = 1;
                 state.pred_break = p_pred[j];
                 state.failure_break = i;
