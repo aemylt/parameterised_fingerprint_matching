@@ -25,5 +25,20 @@ int main(void) {
     if (matches) printf("%d\n", results[matches - 1]);
     else printf("No matches\n");
 
+    matches = parameterised_match("aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaaaaaaaaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaaaaaaaaaaaabbbbbaaaaabbbbb", 200, "aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaaaaaaa", 80, "ab", 2, 0, results);
+    for (i = 0; i < matches - 1; i++) printf("%d, ", results[i]);
+    if (matches) printf("%d\n", results[matches - 1]);
+    else printf("No matches\n");
+
+    matches = parameterised_match("aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbb", 200, "aaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbb", 80, "ab", 2, 0, results);
+    for (i = 0; i < matches - 1; i++) printf("%d, ", results[i]);
+    if (matches) printf("%d\n", results[matches - 1]);
+    else printf("No matches\n");
+
+    matches = parameterised_match("aaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbaaaaabbbbbaaaaabbbbbaaaaabbbbb", 200, "aaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbbbbbbaaaaaaaaaabbbbbaaaaabbbbb", 80, "ab", 2, 0, results);
+    for (i = 0; i < matches - 1; i++) printf("%d, ", results[i]);
+    if (matches) printf("%d\n", results[matches - 1]);
+    else printf("No matches\n");
+
     return 0;
 }
